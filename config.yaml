@@ -1,0 +1,15 @@
+# Change models / DB / chunking here (ingestion side)
+embedding_model: sentence-transformers/all-MiniLM-L6-v2
+vector_db: chromadb
+chroma_path: chroma_db
+collection: hdfc_mf_faq
+chunk_size: 600
+chunk_overlap: 100
+top_k: 4
+export_path: data/store.json
+sources:
+  - {id: amc,      fund: "HDFC Mutual Fund (AMC overview)", url: "https://groww.in/mutual-funds/amc/hdfc-mutual-funds"}
+  - {id: largecap, fund: "HDFC Large Cap Fund Direct Growth", url: "https://groww.in/mutual-funds/hdfc-large-cap-fund-direct-growth"}
+  - {id: flexicap, fund: "HDFC Flexi Cap Direct Plan Growth", url: "https://groww.in/mutual-funds/hdfc-equity-fund-direct-growth"}
+  - {id: elss,     fund: "HDFC ELSS Tax Saver Fund Direct Plan Growth", url: "https://groww.in/mutual-funds/hdfc-elss-tax-saver-fund-direct-plan-growth"}
+  - {id: midcap,   fund: "HDFC Mid Cap Fund Direct Growth", url: "https://groww.in/mutual-funds/hdfc-mid-cap-fund-direct-growth"}

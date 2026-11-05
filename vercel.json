@@ -1,0 +1,1 @@
+{ "functions": { "api/chat.py": { "includeFiles": "data/store.json", "maxDuration": 30 } } }
