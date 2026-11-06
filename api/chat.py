@@ -1,4 +1,3 @@
-"""Vercel serverless function: guardrails -> retrieval (cosine) -> Groq LLM -> cited answer."""
 import json, os, re, math, urllib.request
 from http.server import BaseHTTPRequestHandler
 
@@ -14,17 +13,21 @@ def store():
     global _STORE
     if _STORE is None:
         for p in PATHS:
-            if os.path.exists(p): _STORE = json.load(open(p, encoding="utf-8")); break
+            if os.path.exists(p):
+                _STORE = json.load(open(p, encoding="utf-8"))
+                break
     return _STORE
 
 def post(url, body, headers):
-       req = urllib.request.Request(url, json.dumps(body).encode(), {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0", **headers})
+    h = {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"}
+    h.update(headers)
+    req = urllib.request.Request(url, json.dumps(body).encode(), h)
     return json.loads(urllib.request.urlopen(req, timeout=40).read())
 
-def embed(q):  # same model as ingestion, via HF Inference API
+def embed(q):
     r = post("https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2/pipeline/feature-extraction",
              {"inputs": q}, {"Authorization": "Bearer " + os.environ["HF_TOKEN"]})
-    if r and isinstance(r[0], list):  # token-level -> mean pool
+    if r and isinstance(r[0], list):
         r = [sum(c) / len(r) for c in zip(*r)]
     n = math.sqrt(sum(x * x for x in r)) or 1
     return [x / n for x in r]
@@ -38,7 +41,7 @@ def retrieve(q, k=4):
     try:
         v = embed(q)
         sc = [sum(a * b for a, b in zip(v, c["embedding"])) for c in ch]
-    except Exception:  # fallback if embedding API unavailable
+    except Exception:
         sc = keyword_scores(q, ch)
     return [ch[i] for i in sorted(range(len(ch)), key=lambda i: -sc[i])[:k]]
 
@@ -49,14 +52,15 @@ def llm(q, ctx):
     r = post("https://api.groq.com/openai/v1/chat/completions",
              {"model": os.environ["GROQ_MODEL"], "temperature": 0, "max_tokens": 400,
               "messages": [{"role": "system", "content": sysmsg},
-                           {"role": "user", "content": f"CONTEXT:\n{ctx}\n\nQUESTION: {q}"}]},
+                           {"role": "user", "content": "CONTEXT:\n" + ctx + "\n\nQUESTION: " + q}]},
              {"Authorization": "Bearer " + os.environ["GROQ_API_KEY"]})
     t = r["choices"][0]["message"]["content"]
     return re.sub(r"<think>.*?</think>", "", t, flags=re.S).strip()
 
 def answer(q):
     q = (q or "").strip()[:500]
-    if not q: return {"answer": "Please type a question.", "source": None}
+    if not q:
+        return {"answer": "Please type a question.", "source": None}
     if PII.search(q):
         return {"answer": "Please don't share personal details like PAN, Aadhaar, account numbers, OTPs, emails or phone numbers. I can only answer general fund facts.", "source": EDU, "refused": True}
     if ADVICE.search(q):
@@ -71,9 +75,14 @@ class handler(BaseHTTPRequestHandler):
     def do_POST(self):
         try:
             n = int(self.headers.get("Content-Length", 0))
-            out, code = answer(json.loads(self.rfile.read(n)).get("question", "")), 200
+            out = answer(json.loads(self.rfile.read(n)).get("question", ""))
+            code = 200
         except Exception as e:
-            out, code = {"answer": "Something went wrong. Please try again.", "source": None, "error": str(e)[:120]}, 500
+            out = {"answer": "Something went wrong. Please try again.", "source": None, "error": str(e)[:120]}
+            code = 500
         b = json.dumps(out).encode()
-        self.send_response(code); self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(b))); self.end_headers(); self.wfile.write(b)
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(b)))
+        self.end_headers()
+        self.wfile.write(b)
