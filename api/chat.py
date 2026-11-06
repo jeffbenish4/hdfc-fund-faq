@@ -4,7 +4,7 @@ from http.server import BaseHTTPRequestHandler
 HERE = os.path.dirname(os.path.abspath(__file__))
 PATHS = [os.path.join(HERE, "..", "data", "store.json"), "data/store.json"]
 _STORE = None
-EDU = "https://www.amfiindia.com/investor-corner/knowledge-center"
+EDU = "https://www.amfiindia.com/investor"
 PII = re.compile(r"\b[A-Z]{5}\d{4}[A-Z]\b|\b\d{4}\s?\d{4}\s?\d{4}\b|[\w.+-]+@[\w-]+\.\w+|\b(?:\+?91)?[6-9]\d{9}\b|\botp\b", re.I)
 ADVICE = re.compile(r"\b(should i|shall i|better (fund|to)|which (fund|one) is best|best fund|recommend|suggest|buy|sell|invest in|worth (it|investing)|good (fund|investment)|my portfolio|switch)\b", re.I)
 PERF = re.compile(r"\b(returns?|cagr|performance|outperform|beat|xirr|profit|compare)\b", re.I)
