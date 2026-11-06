@@ -18,7 +18,7 @@ def store():
     return _STORE
 
 def post(url, body, headers):
-    req = urllib.request.Request(url, json.dumps(body).encode(), {"Content-Type": "application/json", **headers})
+       req = urllib.request.Request(url, json.dumps(body).encode(), {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0", **headers})
     return json.loads(urllib.request.urlopen(req, timeout=40).read())
 
 def embed(q):  # same model as ingestion, via HF Inference API
